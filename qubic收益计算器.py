@@ -1,5 +1,6 @@
 #enter you total hashrate of your rigs here (in it/s)
 myHashrate = float(input("请输入您的算力："))
+print("正在获取信息，请稍等")
 
 #doing the math
 import requests
