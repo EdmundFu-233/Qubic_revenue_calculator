@@ -1,14 +1,19 @@
 #enter you total hashrate of your rigs here (in it/s)
-myHashrate = float(input("请输入您的算力："))
+print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
+print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
+myHashrate = float(input("\n请输入您的算力："))
 print("正在获取信息，请稍等")
 
 #doing the math
 import requests
+import datetime
+import locale
 import json
 from datetime import datetime, timedelta
 import pytz
 from pycoingecko import CoinGeckoAPI
 from currency_converter import CurrencyConverter
+locale.setlocale(locale.LC_CTYPE, 'chinese')
 
 rBody = {'userName': 'guest@qubic.li', 'password': 'guest13@Qubic.li', 'twoFactorCode': ''}
 rHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json-patch+json'}
@@ -50,8 +55,17 @@ def currency_convert_cny(amount_usd):
     cny = amount_usd * convert_rate
     return round(cny,2)
 
+def past_score_info(data):
+    for entry in data["scoreStatistics"]:
+        date = entry["daydate"]
+        date = datetime.strptime(date, "%m/%d/%Y")
+        date = date.strftime("%m月%d日")
+        max_score = entry["maxScore"]
+        min_score = entry["minScore"]
+        avg_score = entry["avgScore"]
+        print(f"日期：{date}，最高分：{max_score}，最低分：{min_score}，平均分：{avg_score}")
 
-print('有些奸商拿开源的玩意来卖钱，你要是只挂个赞赏都没那么恶心')
+
 print('-----------------------------------------------------------')
 print('\n\n目前纪元信息:')
 print('目前纪元:',  epochNumber)
@@ -64,11 +78,16 @@ print('网络算力:', '{0:,}'.format(netHashrate).replace(',', ' '), 'it/s')
 print('平均分:',  '{:.1f}'.format(netAvgScores))
 print('sol/每小时:',  '{:.1f}'.format(netSolsPerHour))
 print('-----------------------------------------------------------')
+print('往期分数')
+past_score_info(networkStat)
+print('-----------------------------------------------------------')
 print('收益预计:')
 print('使用固定85%收益池预测\n')
 print('Qubic 价格: {:.8f}$'.format((qubicPrice)))
 print('预测的每 1 it/s 每日的收入:', '{:.4f}￥'.format(incomerPerOneITS))
 print('预测的每日收入:', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS))))
 print('预测的每 sol 的收入:', '{:.2f}￥'.format(currency_convert_cny(curSolPrice)))
-print('预测的每日 sol 数量:', '{:.5f}\n\n'.format(24 * myHashrate * netSolsPerHour / netHashrate))
-input("\n\n按回车退出")
+print('预测的每日 sol 数量:', '{:.5f}\n'.format(24 * myHashrate * netSolsPerHour / netHashrate))
+print('\n项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
+print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
+input("\n按回车退出")
