@@ -65,6 +65,9 @@ def past_score_info(data):
         avg_score = entry["avgScore"]
         print(f"日期：{date}，最高分：{max_score}，最低分：{min_score}，平均分：{avg_score}")
 
+def sol_convert_qus(curSolPrice):
+    qus_quantity = curSolPrice / qubicPrice
+    return int(qus_quantity)
 
 print('-----------------------------------------------------------')
 print('\n\n目前纪元信息:')
@@ -77,6 +80,7 @@ print('网络信息:')
 print('网络算力:', '{0:,}'.format(netHashrate).replace(',', ' '), 'it/s')
 print('平均分:',  '{:.1f}'.format(netAvgScores))
 print('sol/每小时:',  '{:.1f}'.format(netSolsPerHour))
+print('每 sol 的币量：', '{0:,}'.format(sol_convert_qus(curSolPrice)))
 print('-----------------------------------------------------------')
 print('往期分数')
 past_score_info(networkStat)
@@ -88,6 +92,8 @@ print('预测的每 1 it/s 每日的收入:', '{:.4f}￥'.format(incomerPerOneIT
 print('预测的每日收入:', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS))))
 print('预测的每 sol 的收入:', '{:.2f}￥'.format(currency_convert_cny(curSolPrice)))
 print('预测的每日 sol 数量:', '{:.5f}\n'.format(24 * myHashrate * netSolsPerHour / netHashrate))
-print('\n项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
+print('-----------------------------------------------------------')
+print('↑上方可能有信息被遮盖住，请注意窗口大小。')
+print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
 input("\n按回车退出")
