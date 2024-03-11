@@ -3,7 +3,6 @@ print('如果你是花钱购买的本程序，那么你被骗了，请申请退�
 myHashrate = float(input("\n请输入您的算力："))
 print("正在获取信息，请稍等")
 
-#doing the math
 import requests
 import datetime
 import locale
@@ -12,7 +11,7 @@ from datetime import datetime, timedelta
 import pytz
 from pycoingecko import CoinGeckoAPI
 from currency_converter import CurrencyConverter
-locale.setlocale(locale.LC_CTYPE, 'chinese')
+locale.setlocale(locale.LC_ALL, '')
 
 rBody = {'userName': 'guest@qubic.li', 'password': 'guest13@Qubic.li', 'twoFactorCode': ''}
 rHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json-patch+json'}
