@@ -1,4 +1,3 @@
-#enter you total hashrate of your rigs here (in it/s)
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
 myHashrate = float(input("\n请输入您的算力："))
@@ -69,29 +68,37 @@ def sol_convert_qus(curSolPrice):
     qus_quantity = curSolPrice / qubicPrice
     return int(qus_quantity)
 
+def day_per_sol():
+    if 24 * myHashrate * netSolsPerHour / netHashrate < 1:
+        print("\n预测需要" + str(round(1 / (24 * myHashrate * netSolsPerHour / netHashrate),2)) + "天获得一个 sol ")
+        if 7 < 1 / (24 * myHashrate * netSolsPerHour / netHashrate):
+            print("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
+    
+
 print('-----------------------------------------------------------')
-print('\n\n目前纪元信息:')
+print('\n\n⌛ 目前纪元信息⌛:')
 print('目前纪元:',  epochNumber)
 print('目前纪元开始的中国时间:',  convert_utc_to_china(str(curEpochBegin)))
 print('目前纪元结束的中国时间:',  convert_utc_to_china(str(curEpochEnd)))
 print('纪元进度:',  '{:.1f}%'.format(100 * curEpochProgress))
 print('-----------------------------------------------------------')
-print('网络信息:')
+print('🌐 网络信息🌐:')
 print('网络算力:', '{0:,}'.format(netHashrate).replace(',', ' '), 'it/s')
 print('平均分:',  '{:.1f}'.format(netAvgScores))
 print('sol/每小时:',  '{:.1f}'.format(netSolsPerHour))
 print('每 sol 的币量：', '{0:,}'.format(sol_convert_qus(curSolPrice)))
 print('-----------------------------------------------------------')
-print('往期分数')
+print('📆 往期分数📆')
 past_score_info(networkStat)
 print('-----------------------------------------------------------')
-print('收益预计:')
+print('💰 收益预计💰:')
 print('使用固定85%收益池预测\n')
 print('Qubic 价格: {:.8f}$'.format((qubicPrice)))
-print('预测的每 1 it/s 每日的收入:', '{:.4f}￥'.format(incomerPerOneITS))
+print('预测的每 1 it/s 每日的收入:', '{:.4f}￥'.format(currency_convert_cny(incomerPerOneITS)))
 print('预测的每日收入:', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS))))
 print('预测的每 sol 的收入:', '{:.2f}￥'.format(currency_convert_cny(curSolPrice)))
-print('预测的每日 sol 数量:', '{:.5f}\n'.format(24 * myHashrate * netSolsPerHour / netHashrate))
+print('预测的每日 sol 数量:', '{:.5f}'.format(24 * myHashrate * netSolsPerHour / netHashrate))
+day_per_sol()   #获得sol的周期
 print('-----------------------------------------------------------')
 print('↑上方可能有信息被遮盖住，请注意窗口大小。')
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
