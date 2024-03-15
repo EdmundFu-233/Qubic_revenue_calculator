@@ -1,6 +1,6 @@
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
-myHashrate = float(input("\n请输入您的算力："))
+myHashrate = int(input("\n请输入您的算力："))
 print("正在获取信息，请稍等")
 
 import requests
@@ -82,10 +82,9 @@ print('目前纪元结束的中国时间:',  convert_utc_to_china(str(curEpochEn
 print('纪元进度:',  '{:.1f}%'.format(100 * curEpochProgress))
 print('-----------------------------------------------------------')
 print('🌐 网络信息🌐:')
-print('网络算力:', '{0:,}'.format(netHashrate).replace(',', ' '), 'it/s')
+print('估测的网络算力:', '{0:,}'.format(netHashrate).replace(',', ' '), 'it/s')
 print('平均分:',  '{:.1f}'.format(netAvgScores))
 print('sol/每小时:',  '{:.1f}'.format(netSolsPerHour))
-print('每 sol 的币量：', '{0:,}'.format(sol_convert_qus(curSolPrice)))
 print('-----------------------------------------------------------')
 print('📆 往期分数📆')
 past_score_info(networkStat)
@@ -97,6 +96,7 @@ print('预测的每 1 it/s 每日的收入:', '{:.2f}￥'.format(currency_conver
 print('预测的每日收入:', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS))))
 print('预测的每 sol 的收入:', '{:.2f}￥'.format(currency_convert_cny(curSolPrice)))
 print('预测的每日 sol 数量:', '{:.5f}'.format(24 * myHashrate * netSolsPerHour / netHashrate))
+print('预测的每 sol 的币量：', '{0:,}'.format(sol_convert_qus(curSolPrice)))
 day_per_sol()   #获得sol的周期
 print('-----------------------------------------------------------')
 print('↑上方可能有信息被遮盖住，请注意窗口大小。')
