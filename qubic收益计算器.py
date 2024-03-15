@@ -1,12 +1,73 @@
+import os
+import json
+import requests
+
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
-myHashrate = int(input("\n请输入您的算力："))
+print('---------------------------------------------------------------------')
+
+def get_name_passwd():
+    file_name = "calculator_temp"
+    if os.path.isfile(file_name):
+        use_saved_pass = input("已发现之前使用的用户密码，是否使用？\n输入Y或N回车确认 ")
+        if use_saved_pass == "Y" or use_saved_pass == "y":
+            with open(file_name, "r") as json_file:
+                user_pswd_data = json.load(json_file)
+            return user_pswd_data
+        elif use_saved_pass == "N" or use_saved_pass == "n":
+            os.remove(file_name)
+            user_name = input("请输入你的qubic.li用户名： ")
+            user_passwd = input("请输入你的qubic.li密码： ")
+            user_pswd_data = {"user_name": user_name,
+                            "user_passwd":user_passwd }
+            with open(file_name, "w") as json_file:
+                json.dump(user_pswd_data, json_file)
+            return user_pswd_data
+    else:
+        user_name = input("请输入你的qubic.li用户名： ")
+        user_passwd = input("请输入你的qubic.li密码： ")
+        user_pswd_data = {"user_name": user_name,
+                          "user_passwd":user_passwd }
+        with open(file_name, "w") as json_file:
+            json.dump(user_pswd_data, json_file)
+        return user_pswd_data
+    
+def miner_info(user_name,user_password):
+    url = "https://api.qubic.li/Auth/Login"
+    request_payload = {
+    "userName": user_name,
+    "password": user_password
+    }
+    request_header = {
+    "Content-Type": "application/json",
+    "Origin": "https://app.qubic.li",
+    "Referer": "https://app.qubic.li/"
+    }
+    miner_data = requests.post(url, json=request_payload, headers=request_header)
+    token = miner_data.json().get("token")
+    headers = {
+    'Accept': 'application/json',
+    "Authorization": f"Bearer {token}"
+    }  
+    miner_performance_url = "https://api.qubic.li/My/Pool/f4535705-eeac-4c4f-9ddc-4c3a91b40b13/Performance"
+    miner_performance_json=requests.get(miner_performance_url,headers=headers)
+    miner_performance=miner_performance_json.json()
+    return miner_performance
+
+def miner_hashrate(miners_info):
+    miners = miners_info["miners"]
+    hashrate = 0
+    for miner in miners:
+        hashrate += int(miner["currentIts"])
+    return hashrate
+
+name_passwd = get_name_passwd()
+miner_info_temp = miner_info(name_passwd["user_name"],name_passwd["user_passwd"])
+myHashrate = miner_hashrate(miner_info_temp)
 print("正在获取信息，请稍等")
 
-import requests
 import datetime
 import locale
-import json
 from datetime import datetime, timedelta
 import pytz
 from pycoingecko import CoinGeckoAPI
@@ -75,6 +136,20 @@ def day_per_sol_warning(table_name):
         if 7 < 1 / (24 * myHashrate * netSolsPerHour / netHashrate):
             table_name.add_row("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠","⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
 
+def miner_detail(miner_info,table_name):
+    miner_info = miner_info["miners"]
+    def miner_luckyness(Its,solutionsFound):
+        if solutionsFound == 0:
+            return "N/A"
+        else:
+            luckyness = (24 * Its * netSolsPerHour / netHashrate) / solutionsFound
+            return luckyness
+    for miner in miner_info:
+        if miner_luckyness(miner['currentIts'],miner['solutionsFound']) == "N/A":
+            table_name.add_row(miner['alias'],str(miner['currentIts']),str(miner['solutionsFound']),"N/A")
+        else:
+            table_name.add_row(miner['alias'],str(miner['currentIts']),str(miner['solutionsFound']),"{:.1%}".format(miner_luckyness(miner['currentIts'],miner['solutionsFound'])))
+
 table_epoch_info = Table(title="⌛ 目前纪元信息⌛")
 table_epoch_info.add_column('信息类型', style="cyan")
 table_epoch_info.add_column('数值', justify="right", style="green")
@@ -100,7 +175,7 @@ table_past_score_info.add_column('平均分', style="green")
 past_score_info(networkStat,table_past_score_info)
 Console().print(table_past_score_info)
 
-table_revenue_estimate = Table(title="💰 收益预计💰( 85% 收益池)")
+table_revenue_estimate = Table(title="💰 收益预计💰 (85%收益池)")
 table_revenue_estimate.add_column('信息类型', style="cyan")
 table_revenue_estimate.add_column('数值', justify="right", style="green")
 table_revenue_estimate.add_row('Qubic 价格', '{:.8f}$'.format((qubicPrice)))
@@ -111,6 +186,15 @@ table_revenue_estimate.add_row('预测的每日 sol 数量', '{:.3f}'.format(24 
 table_revenue_estimate.add_row('预测的每 sol 的币量', '{0:,}'.format(sol_convert_qus(curSolPrice)))
 day_per_sol_warning(table_revenue_estimate)
 Console().print(table_revenue_estimate)
+
+table_miner_detail = Table(title="🖥️ 矿机信息🖥️")
+table_miner_detail.add_column('名称', style="cyan")
+table_miner_detail.add_column('目前算力', justify="right", style="green")
+table_miner_detail.add_column('sol 数量', justify="right", style="red")
+table_miner_detail.add_column('幸运值', justify="right", style="green")
+miner_detail(miner_info(name_passwd["user_name"],name_passwd["user_passwd"]),table_miner_detail)
+Console().print(table_miner_detail)
+print("总算力: " + str(myHashrate))
 
 print('↑上方可能有信息被遮盖住，请注意窗口大小↑')
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
