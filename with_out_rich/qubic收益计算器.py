@@ -11,8 +11,6 @@ from datetime import datetime, timedelta
 import pytz
 from pycoingecko import CoinGeckoAPI
 from currency_converter import CurrencyConverter
-from rich.console import Console
-from rich.table import Table
 locale.setlocale(locale.LC_ALL, '')
 
 rBody = {'userName': 'guest@qubic.li', 'password': 'guest13@Qubic.li', 'twoFactorCode': ''}
@@ -55,7 +53,7 @@ def currency_convert_cny(amount_usd):
     cny = amount_usd * convert_rate
     return round(cny,2)
 
-def past_score_info(data,table_name):
+def past_score_info(data):
     for entry in data["scoreStatistics"]:
         date = entry["daydate"]
         date = datetime.strptime(date, "%m/%d/%Y")
@@ -63,56 +61,45 @@ def past_score_info(data,table_name):
         max_score = entry["maxScore"]
         min_score = entry["minScore"]
         avg_score = entry["avgScore"]
-        table_name.add_row(date,str(max_score),str(min_score),str(avg_score))
+        print(f"日期：{date}，最高分：{max_score}，最低分：{min_score}，平均分：{avg_score}")
 
 def sol_convert_qus(curSolPrice):
     qus_quantity = curSolPrice / qubicPrice
     return int(qus_quantity)
 
-def day_per_sol_warning(table_name):
+def day_per_sol():
     if 24 * myHashrate * netSolsPerHour / netHashrate < 1:
-        table_name.add_row('预测获取sol的周期', str(round(1 / (24 * myHashrate * netSolsPerHour / netHashrate),2)) + " 天")
+        print("\n预测需要" + str(round(1 / (24 * myHashrate * netSolsPerHour / netHashrate),2)) + "天获得一个 sol ")
         if 7 < 1 / (24 * myHashrate * netSolsPerHour / netHashrate):
-            table_name.add_row("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠","⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
+            print("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
+    
 
-table_epoch_info = Table(title="⌛ 目前纪元信息⌛")
-table_epoch_info.add_column('信息类型', style="cyan")
-table_epoch_info.add_column('数值', justify="right", style="green")
-table_epoch_info.add_row('目前纪元',str(epochNumber))
-table_epoch_info.add_row('目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin)))
-table_epoch_info.add_row('目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd)))
-table_epoch_info.add_row('纪元进度','{:.1f}%'.format(100 * curEpochProgress))
-Console().print(table_epoch_info)
-
-table_network_info = Table(title="🌐 网络信息🌐")
-table_network_info.add_column('信息类型', style="cyan")
-table_network_info.add_column('数值', justify="right", style="green")
-table_network_info.add_row('估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' '))
-table_network_info.add_row('平均分',  '{:.1f}'.format(netAvgScores))
-table_network_info.add_row('sol/每小时',  '{:.1f}'.format(netSolsPerHour))
-Console().print(table_network_info)
-
-table_past_score_info = Table(title="📆 往期分数📆")
-table_past_score_info.add_column('日期', style="cyan")
-table_past_score_info.add_column('最高分', style="green")
-table_past_score_info.add_column('最低分', style="green")
-table_past_score_info.add_column('平均分', style="green")
-past_score_info(networkStat,table_past_score_info)
-Console().print(table_past_score_info)
-
-table_revenue_estimate = Table(title="💰 收益预计💰( 85% 收益池)")
-table_revenue_estimate.add_column('信息类型', style="cyan")
-table_revenue_estimate.add_column('数值', justify="right", style="green")
-table_revenue_estimate.add_row('Qubic 价格', '{:.8f}$'.format((qubicPrice)))
-table_revenue_estimate.add_row('预测的每 1 it/s 每日的收入', '{:.2f}￥'.format(currency_convert_cny(incomerPerOneITS)))
-table_revenue_estimate.add_row('预测的每日收入', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS))))
-table_revenue_estimate.add_row('预测的每 sol 的收入', '{:.2f}￥'.format(currency_convert_cny(curSolPrice)))
-table_revenue_estimate.add_row('预测的每日 sol 数量', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate))
-table_revenue_estimate.add_row('预测的每 sol 的币量', '{0:,}'.format(sol_convert_qus(curSolPrice)))
-day_per_sol_warning(table_revenue_estimate)
-Console().print(table_revenue_estimate)
-
-print('↑上方可能有信息被遮盖住，请注意窗口大小↑')
+print('-----------------------------------------------------------')
+print('\n\n⌛ 目前纪元信息⌛:')
+print('目前纪元:',  epochNumber)
+print('目前纪元开始的中国时间:',  convert_utc_to_china(str(curEpochBegin)))
+print('目前纪元结束的中国时间:',  convert_utc_to_china(str(curEpochEnd)))
+print('纪元进度:',  '{:.1f}%'.format(100 * curEpochProgress))
+print('-----------------------------------------------------------')
+print('🌐 网络信息🌐:')
+print('估测的网络算力:', '{0:,}'.format(netHashrate).replace(',', ' '), 'it/s')
+print('平均分:',  '{:.1f}'.format(netAvgScores))
+print('sol/每小时:',  '{:.1f}'.format(netSolsPerHour))
+print('-----------------------------------------------------------')
+print('📆 往期分数📆')
+past_score_info(networkStat)
+print('-----------------------------------------------------------')
+print('💰 收益预计💰:')
+print('使用固定85%收益池预测\n')
+print('Qubic 价格: {:.8f}$'.format((qubicPrice)))
+print('预测的每 1 it/s 每日的收入:', '{:.2f}￥'.format(currency_convert_cny(incomerPerOneITS)))
+print('预测的每日收入:', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS))))
+print('预测的每 sol 的收入:', '{:.2f}￥'.format(currency_convert_cny(curSolPrice)))
+print('预测的每日 sol 数量:', '{:.5f}'.format(24 * myHashrate * netSolsPerHour / netHashrate))
+print('预测的每 sol 的币量：', '{0:,}'.format(sol_convert_qus(curSolPrice)))
+day_per_sol()   #获得sol的周期
+print('-----------------------------------------------------------')
+print('↑上方可能有信息被遮盖住，请注意窗口大小。')
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
 input("\n按回车退出")
