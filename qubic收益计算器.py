@@ -1,9 +1,11 @@
+version = "v2.2"
 import os
 import json
 import requests
 
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
+print('版本号： ' + version)
 print('---------------------------------------------------------------------')
 
 def get_name_passwd():
@@ -136,19 +138,21 @@ def day_per_sol_warning(table_name):
         if 7 < 1 / (24 * myHashrate * netSolsPerHour / netHashrate):
             table_name.add_row("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠","⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
 
+def miner_luckyness(Its,solutionsFound):
+    if solutionsFound == 0:
+        return "N/A"
+    else:
+        luckyness = (24 * Its * netSolsPerHour / netHashrate) / solutionsFound
+        return luckyness
+
 def miner_detail(miner_info,table_name):
     miner_info = miner_info["miners"]
-    def miner_luckyness(Its,solutionsFound):
-        if solutionsFound == 0:
-            return "N/A"
-        else:
-            luckyness = (24 * Its * netSolsPerHour / netHashrate) / solutionsFound
-            return luckyness
     for miner in miner_info:
         if miner_luckyness(miner['currentIts'],miner['solutionsFound']) == "N/A":
-            table_name.add_row(miner['alias'],str(miner['currentIts']),str(miner['solutionsFound']),"N/A")
+            table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"N/A")
         else:
-            table_name.add_row(miner['alias'],str(miner['currentIts']),str(miner['solutionsFound']),"{:.1%}".format(miner_luckyness(miner['currentIts'],miner['solutionsFound'])))
+            table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"{:.1%}".format(miner_luckyness(miner['currentIts'],miner['solutionsFound'])))
+
 
 table_epoch_info = Table(title="⌛ 目前纪元信息⌛")
 table_epoch_info.add_column('信息类型', style="cyan")
@@ -194,7 +198,14 @@ table_miner_detail.add_column('sol 数量', justify="right", style="red")
 table_miner_detail.add_column('幸运值', justify="right", style="green")
 miner_detail(miner_info(name_passwd["user_name"],name_passwd["user_passwd"]),table_miner_detail)
 Console().print(table_miner_detail)
-print("总算力: " + str(myHashrate))
+
+table_miner_summary = Table(title="🖥️ 矿机总结🖥️")
+table_miner_summary.add_column('总算力', style="cyan")
+table_miner_summary.add_column('总 Sol ', justify="right", style="green")
+table_miner_summary.add_column('总幸运值', justify="right", style="green")
+table_miner_summary.add_row(str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
+                           ,"{:.1%}".format(miner_luckyness(myHashrate,miner_info_temp["foundSolutions"])))
+Console().print(table_miner_summary)
 
 print('↑上方可能有信息被遮盖住，请注意窗口大小↑')
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
