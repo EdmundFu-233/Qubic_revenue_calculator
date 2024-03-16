@@ -142,7 +142,7 @@ def miner_luckyness(Its,solutionsFound):
     if solutionsFound == 0:
         return "N/A"
     else:
-        luckyness = (24 * Its * netSolsPerHour / netHashrate) / solutionsFound
+        luckyness = solutionsFound / (168 * Its * netSolsPerHour / netHashrate)
         return luckyness
 
 def miner_detail(miner_info,table_name):
