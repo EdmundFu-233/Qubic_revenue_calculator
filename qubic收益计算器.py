@@ -128,6 +128,11 @@ def past_score_info(data,table_name):
         avg_score = entry["avgScore"]
         table_name.add_row(date,str(max_score),str(min_score),str(avg_score))
 
+def latest_avg_score(data):
+    latest_entry = max(data["scoreStatistics"], key=lambda x: x['daydate'])
+    latest_avg_score = latest_entry['avgScore']
+    return latest_avg_score
+
 def sol_convert_qus(curSolPrice):
     qus_quantity = curSolPrice / qubicPrice
     return int(qus_quantity)
@@ -138,20 +143,20 @@ def day_per_sol_warning(table_name):
         if 7 < 1 / (24 * myHashrate * netSolsPerHour / netHashrate):
             table_name.add_row("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠","⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
 
-def miner_luckyness(Its,solutionsFound):
+def miner_luckyness(Its,solutionsFound,latest_avg_score):       ##存在算法层面的疑惑，如果您有更好的解决方法，请提交issue
     if solutionsFound == 0:
         return "N/A"
     else:
-        luckyness = solutionsFound / (168 * Its * netSolsPerHour / netHashrate)
+        luckyness = (Its / solutionsFound) / (Its / latest_avg_score * 676)
         return luckyness
 
 def miner_detail(miner_info,table_name):
     miner_info = miner_info["miners"]
     for miner in miner_info:
-        if miner_luckyness(miner['currentIts'],miner['solutionsFound']) == "N/A":
+        if miner_luckyness(miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat)) == "N/A":
             table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"N/A")
         else:
-            table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"{:.1%}".format(miner_luckyness(miner['currentIts'],miner['solutionsFound'])))
+            table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"{:.1%}".format(miner_luckyness(miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat))))
 
 
 table_epoch_info = Table(title="⌛ 目前纪元信息⌛")
@@ -204,7 +209,7 @@ table_miner_summary.add_column('总算力', style="cyan")
 table_miner_summary.add_column('总 Sol ', justify="right", style="green")
 table_miner_summary.add_column('总幸运值', justify="right", style="green")
 table_miner_summary.add_row(str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
-                           ,"{:.1%}".format(miner_luckyness(myHashrate,miner_info_temp["foundSolutions"])))
+                           ,"{:.1%}".format(miner_luckyness(myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat))))
 Console().print(table_miner_summary)
 
 print('↑上方可能有信息被遮盖住，请注意窗口大小↑')
