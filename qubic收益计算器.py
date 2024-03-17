@@ -154,7 +154,7 @@ def day_per_sol_warning(table_name):
         if 7 < 1 / (24 * myHashrate * netSolsPerHour / netHashrate):
             table_name.add_row("⚠  获得 sol 周期超过 1 纪元，请注意风险⚠","⚠  获得 sol 周期超过 1 纪元，请注意风险⚠")
 
-def miner_luckyness(network_its,Its,solutionsFound,latest_avg_score):       ##存在算法层面的疑惑，如果您有更好的解决方法，请提交issue
+def miner_luckiness(network_its,Its,solutionsFound,latest_avg_score):       ##存在算法层面的疑惑，如果您有更好的解决方法，请提交issue
     if solutionsFound == 0:
         return "N/A"
     else:
@@ -164,12 +164,12 @@ def miner_luckyness(network_its,Its,solutionsFound,latest_avg_score):       ##�
 def miner_detail(miner_info,table_name):
     miner_info = miner_info["miners"]
     for miner in miner_info:
-        if miner_luckyness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat)) == "N/A":
+        if miner_luckiness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat)) == "N/A":
             table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"N/A")
         else:
             table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s"
                                ,str(miner['solutionsFound'])
-                               ,"{:.1%}".format(miner_luckyness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat))))
+                               ,"{:.1%}".format(miner_luckiness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat))))
 
 
 table_epoch_info = Table(title="⌛ 目前纪元信息⌛")
@@ -223,7 +223,7 @@ if offline_mode == False:
     table_miner_summary.add_column('总 Sol ', justify="right", style="green")
     table_miner_summary.add_column('总幸运值', justify="right", style="green")
     table_miner_summary.add_row(str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
-                            ,"{:.1%}".format(miner_luckyness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat))))
+                            ,"{:.1%}".format(miner_luckiness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat))))
     Console().print(table_miner_summary)
 
 print('↑上方可能有信息被遮盖住，请注意窗口大小↑')
