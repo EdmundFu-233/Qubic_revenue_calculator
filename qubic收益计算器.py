@@ -1,4 +1,4 @@
-version = "v2.4"
+version = "v2.4.1"
 import os
 import json
 import requests
@@ -6,7 +6,7 @@ import requests
 print('项目地址：https://github.com/EdmundFu-233/Qubic_revenue_calculator')
 print('如果你是花钱购买的本程序，那么你被骗了，请申请退款。')
 print('已知问题：打开2FA的账户无法登入，请使用离线模式')
-print('版本号： ' + version)
+print('版本号： ',version)
 print('---------------------------------------------------------------------')
 
 offline_mode = input("是否进入离线模式？（无需输入账号密码）\n输入[Y]es或[N]o回车确认: ")
