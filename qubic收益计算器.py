@@ -1,4 +1,4 @@
-version = "v2.4.1"
+version = "v2.4.2"
 import os
 import json
 import requests
@@ -132,7 +132,8 @@ def currency_convert_cny(amount_usd):
 def past_score_info(data,table_name):
     for entry in data["scoreStatistics"]:
         date = entry["daydate"]
-        date = datetime.strptime(date, "%m/%d/%Y")
+        date = date.replace(" AM","").replace(" PM","")
+        date = datetime.strptime(date, "%m/%d/%Y %I:%M:%S")
         date = date.strftime("%m月%d日")
         max_score = entry["maxScore"]
         min_score = entry["minScore"]
