@@ -1,4 +1,4 @@
-version = "v2.5"
+version = "v2.5.1"
 import os
 import json
 import requests
@@ -173,6 +173,13 @@ def miner_detail(miner_info,table_name):
                                ,"{:.1%}".format(miner_luckiness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat))))
 
 
+def summary_luckiness():
+    luckiness = miner_luckiness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat))
+    if luckiness != "N/A":
+        return "{:.1%}".format(miner_luckiness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat)))
+    else:
+        return "N/A"
+
 table_epoch_info = Table(title="⌛ 目前纪元信息⌛")
 table_epoch_info.add_column('信息类型', style="cyan")
 table_epoch_info.add_column('数值', justify="right", style="green")
@@ -225,7 +232,7 @@ if offline_mode == False:
     table_miner_summary.add_column('总幸运值', justify="right", style="green")
     table_miner_summary.add_column('截止目前收益', justify="right", style="green")
     table_miner_summary.add_row(str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
-                            ,"{:.1%}".format(miner_luckiness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat)))
+                            ,summary_luckiness()
                             ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["foundSolutions"]))
     Console().print(table_miner_summary)
 
