@@ -1,4 +1,4 @@
-version = "v2.4.2"
+version = "v2.5"
 import os
 import json
 import requests
@@ -223,8 +223,10 @@ if offline_mode == False:
     table_miner_summary.add_column('总算力', style="cyan")
     table_miner_summary.add_column('总 Sol ', justify="right", style="green")
     table_miner_summary.add_column('总幸运值', justify="right", style="green")
+    table_miner_summary.add_column('截止目前收益', justify="right", style="green")
     table_miner_summary.add_row(str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
-                            ,"{:.1%}".format(miner_luckiness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat))))
+                            ,"{:.1%}".format(miner_luckiness(netHashrate,myHashrate,miner_info_temp["foundSolutions"],latest_avg_score(networkStat)))
+                            ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["foundSolutions"]))
     Console().print(table_miner_summary)
 
 print('↑上方可能有信息被遮盖住，请注意窗口大小↑')
