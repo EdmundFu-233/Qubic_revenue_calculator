@@ -1,5 +1,5 @@
 try:
-    version = "v2.5.2"
+    version = "v2.6"
     import os
     import json
     import requests
@@ -70,6 +70,7 @@ try:
         for miner in miners:
             hashrate += int(miner["currentIts"])
         return hashrate
+
 
     if offline_mode == False:
         name_passwd = get_name_passwd()
@@ -162,16 +163,27 @@ try:
         else:
             luckyness = (Its / solutionsFound) / (network_its / (latest_avg_score * 676))
             return luckyness
+        
+    def miner_last_active(utc_datetime):
+        utc_datetime = utc_datetime.replace('T',' ')
+        utc_datetime = datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S.%f')
+        utc_timezone = pytz.timezone('UTC')
+        china_timezone = pytz.timezone('Asia/Shanghai')
+        utc_datetime = utc_timezone.localize(utc_datetime)
+        china_datetime = utc_datetime.astimezone(china_timezone)
+        return china_datetime.strftime('%m月%d日 %H:%M:%S')
 
     def miner_detail(miner_info,table_name):
         miner_info = miner_info["miners"]
         for miner in miner_info:
             if miner_luckiness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat)) == "N/A":
-                table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s",str(miner['solutionsFound']),"N/A")
+                table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s"
+                                    ,str(miner['solutionsFound']),"N/A",str(miner_last_active(miner['lastActive'])))
             else:
                 table_name.add_row(miner['alias'],str(miner['currentIts']) + " it/s"
                                 ,str(miner['solutionsFound'])
-                                ,"{:.1%}".format(miner_luckiness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat))))
+                                ,"{:.1%}".format(miner_luckiness(netHashrate,miner['currentIts'],miner['solutionsFound'],latest_avg_score(networkStat)))
+                                                ,str(miner_last_active(miner['lastActive'])))
 
 
     def summary_luckiness():
@@ -224,6 +236,7 @@ try:
         table_miner_detail.add_column('目前算力', justify="right", style="green")
         table_miner_detail.add_column('sol 数量', justify="right", style="red")
         table_miner_detail.add_column('幸运值', justify="right", style="green")
+        table_miner_detail.add_column('最后一次心跳', justify="right", style="green")
         miner_detail(miner_info(name_passwd["user_name"],name_passwd["user_passwd"]),table_miner_detail)
         Console().print(table_miner_detail)
 
