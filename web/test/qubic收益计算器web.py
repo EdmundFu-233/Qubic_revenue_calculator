@@ -11,16 +11,18 @@ from datetime import datetime, timedelta
 import pytz
 from pycoingecko import CoinGeckoAPI
 from currency_converter import CurrencyConverter
+js_file = ""
 js_code = """
 
 """
 cache_json = "Data_Cache.json"
-@pywebio.config(js_code=js_code)
+@pywebio.config(js_code=js_code,js_file=js_file)
 def main():
         try:
             pywebio.session.run_js('WebIO._state.CurrentSession.on_session_close(()=>{setTimeout(()=>location.reload(), 4000})')
             pywebio.session.run_js("$('head link[rel=icon]').attr('href', image_url)", image_url="https://framerusercontent.com/images/Hz7gOuXD46YyfCTTafJLOvWNi0.png")
             user_lang = pywebio.session.info['user_language']
+            user_device_is_pc = pywebio.session.info['user_agent'].is_pc
             if user_lang == 'zh-CN':
                 pywebio.config(title="Qubic收益计算器")
             else:
@@ -31,15 +33,16 @@ def main():
                 offline_options = [["Yes",0,True],["No (Qubic-li pool)",1],["No (Qubic-solution pool)",2]]
             def begging():
                 if user_lang == 'zh-CN':
-                    pywebio.output.put_info("免费项目，如果您愿意，请赞助此项目的维护，谢谢\nQubic地址：\nTGVFDIRGWBGOUCVRYQSUVPXFVDWBMDRRTIXHSBYGVEFRRQWDJDLAXNYCZPDB")
+                    pywebio.output.put_info("免费项目，如果您愿意，请赞助此项目的维护，谢谢\nQubic地址：\nTGVFDIRGWBGOUCVRYQSUVPXFVDWBMDRRTIXHSBYGVEFRRQWDJDLAXNYCZPDB\n源码：https://github.com/EdmundFu-233/Qubic_revenue_calculator")
                 else:
-                    pywebio.output.put_info("Free open-source project, please support us on project maintainance and development, Thank you.\nQubic address:\nTGVFDIRGWBGOUCVRYQSUVPXFVDWBMDRRTIXHSBYGVEFRRQWDJDLAXNYCZPDB")
+                    pywebio.output.put_info("Free open-source project, please support us on project maintainance and development, Thank you.\nQubic address:\nTGVFDIRGWBGOUCVRYQSUVPXFVDWBMDRRTIXHSBYGVEFRRQWDJDLAXNYCZPDB\nSource code:https://github.com/EdmundFu-233/Qubic_revenue_calculator")
             begging()
             if user_lang == 'zh-CN':
                 pywebio.output.put_markdown("<font size=10> <center>Qubic 收益计算器</center> </font>")
             else:
                 pywebio.output.put_markdown("<font size=10> <center>Qubic Revenue Calculator</center> </font>")
             pywebio.output.put_markdown("<font size=4> <center>A open-source project made by EdmundFu with love❤️</center> </font>")
+            pywebio.output.put_text("")
 
 
             def convert_utc_to_china(utc_time):
@@ -49,6 +52,11 @@ def main():
                 utc_datetime = utc_timezone.localize(utc_datetime)
                 china_datetime = utc_datetime.astimezone(china_timezone)
                 return china_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            
+            def currency_convert_cny(amount_usd):
+                convert_rate = CurrencyConverter().convert(1,'USD','CNY')
+                cny = amount_usd * convert_rate
+                return round(cny,2)
 
             def is_recent_data(json_file):
                 if not os.path.exists(json_file):
@@ -58,7 +66,7 @@ def main():
                         data = json.load(f)
                         timestamp = data.get('timestamp', 0)
                         current_time = time.time()
-                    if current_time - timestamp <= 30:
+                    if current_time - timestamp <= 60:
                         return True
                     else:
                         return False
@@ -137,39 +145,86 @@ def main():
                 incomerPerOneITS = data['incomerPerOneITS']
                 curSolPrice = data['curSolPrice']
                 networkStat = data['networkStat']
+            
+            if user_lang == 'zh-CN':
+                pywebio.output.put_markdown("<font size=3> <center>" + "目前每SOL价值： " + str(round(currency_convert_cny(curSolPrice),2)) + "¥" + "</center> </font>")
+            else:
+                pywebio.output.put_markdown("<font size=3> <center>" + "Current per SOL valued: " + str(round(curSolPrice,2)) + "$" + "</center> </font>")
+
+            try:
+                if user_device_is_pc == True:
+                    if user_lang == 'zh-CN':
+                        pywebio.output.put_row([pywebio.output.put_text("⌛ 目前纪元信息⌛"),pywebio.output.put_text("🌐 网络信息🌐")])
+                        pywebio.output.put_row([pywebio.output.put_table([['信息类型','数值'],
+                                                    ['目前纪元',str(epochNumber)],
+                                                    ['目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin))],
+                                                    ['目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd))],
+                                                    ['纪元进度','{:.1f}%'.format(100 * curEpochProgress)]]),
+                                                    #None,
+                                                    pywebio.output.put_table([['信息类型','数值'],
+                                                    ['估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                    ['sol/每小时',  '{:.1f}'.format(netSolsPerHour)],
+                                                    ['平均分',  '{:.1f}'.format(netAvgScores)],
+                                                    ['预测结束平均分','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])])
+                        pywebio.output.put_text("")
+                    else:
+                        pywebio.output.put_row([pywebio.output.put_text("⌛ Current epoch info⌛"),pywebio.output.put_text("🌐 Network info🌐")])
+                        pywebio.output.put_row([pywebio.output.put_table([['Data category','Data'],
+                                                    ['Current epoch number',str(epochNumber)],
+                                                    ['Current epoch start time (UTC)',str(curEpochBegin)],
+                                                    ['Current epoch end time (UTC)',str(curEpochEnd)],
+                                                    ['Epoch progress','{:.1f}%'.format(100 * curEpochProgress)]]),
+                                                    #None,
+                                                    pywebio.output.put_table([['Data catefory','Data'],
+                                                    ['Estimated hashrate', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                    ['Sols per hour',  '{:.1f}'.format(netSolsPerHour)],
+                                                    ['Average score',  '{:.1f}'.format(netAvgScores)],
+                                                    ['Estimated Average score at epoch end','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])])
+                        pywebio.output.put_text("")
+                else:
+                    if user_lang == 'zh-CN':
+                        pywebio.output.put_text("⌛ 目前纪元信息⌛")
+                        pywebio.output.put_table([['信息类型','数值'],
+                                                    ['目前纪元',str(epochNumber)],
+                                                    ['目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin))],
+                                                    ['目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd))],
+                                                    ['纪元进度','{:.1f}%'.format(100 * curEpochProgress)]])
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("🌐 网络信息🌐")
+                        pywebio.output.put_table([['信息类型','数值'],
+                                                    ['估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                    ['sol/每小时',  '{:.1f}'.format(netSolsPerHour)],
+                                                    ['平均分',  '{:.1f}'.format(netAvgScores)],
+                                                    ['预测结束平均分','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])
+                        pywebio.output.put_text("")
+                        
+                    else:
+                        pywebio.output.put_text("⌛ Current epoch info⌛")
+                        pywebio.output.put_table([['Data category','Data'],
+                                                    ['Current epoch number',str(epochNumber)],
+                                                    ['Current epoch start time (UTC)',str(curEpochBegin)],
+                                                    ['Current epoch end time (UTC)',str(curEpochEnd)],
+                                                    ['Epoch progress','{:.1f}%'.format(100 * curEpochProgress)]])
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("🌐 Network info🌐")
+                        pywebio.output.put_table([['Data catefory','Data'],
+                                                    ['Estimated hashrate', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                    ['Sols per hour',  '{:.1f}'.format(netSolsPerHour)],
+                                                    ['Average score',  '{:.1f}'.format(netAvgScores)],
+                                                    ['Estimated Average score at epoch end','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])
+                        pywebio.output.put_text("")
+            except:
+                if user_lang == 'zh-CN':
+                    pywebio.output.put_text("Qubic-li API出错或离线，无法获取数据，请稍后再试。")
+                else:
+                    pywebio.output.put_text("Can't fetch data while requesting to Qubic-li's API, please retry after few minutes.")
+                
 
 
             if user_lang == 'zh-CN':
-                pywebio.output.put_row([pywebio.output.put_text("⌛ 目前纪元信息⌛"),None,pywebio.output.put_text("🌐 网络信息🌐")])
-                pywebio.output.put_row([pywebio.output.put_table([['信息类型','数值'],
-                                            ['目前纪元',str(epochNumber)],
-                                            ['目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin))],
-                                            ['目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd))],
-                                            ['纪元进度','{:.1f}%'.format(100 * curEpochProgress)]]),
-                                            None,
-                                            pywebio.output.put_table([['信息类型','数值'],
-                                            ['估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
-                                            ['sol/每小时',  '{:.1f}'.format(netSolsPerHour)],
-                                            ['平均分',  '{:.1f}'.format(netAvgScores)],
-                                            ['预测结束平均分','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=7)) )]])])
+                is_offline_mode = pywebio.input.select(label="是否进入不登入模式（不查看矿机信息）",options=offline_options)
             else:
-                pywebio.output.put_row([[pywebio.output.put_text("⌛ Current epoch info⌛")],None,pywebio.output.put_text("🌐 Network info🌐")])
-                pywebio.output.put_row([pywebio.output.put_table([['Data category','Data'],
-                                            ['Current epoch number',str(epochNumber)],
-                                            ['Current epoch start time (UTC)',str(curEpochBegin)],
-                                            ['Current epoch end time (UTC)',str(curEpochEnd)],
-                                            ['Epoch progress','{:.1f}%'.format(100 * curEpochProgress)]]),
-                                            None,
-                                            pywebio.output.put_table([['Data catefory','Data'],
-                                            ['Estimated hashrate', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
-                                            ['Sols per hour',  '{:.1f}'.format(netSolsPerHour)],
-                                            ['Average score',  '{:.1f}'.format(netAvgScores)],
-                                            ['Estimated Average score epoch end','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=7)) )]])])
-
-            if user_lang == 'zh-CN':
-                is_offline_mode = pywebio.input.select(label="是否进入离线模式（不查看矿机信息）",options=offline_options)
-            else:
-                is_offline_mode = pywebio.input.select(label="Enter offline mode? (No miner info)",options=offline_options)
+                is_offline_mode = pywebio.input.select(label="Enter nologin mode? (No miner info)",options=offline_options)
             if is_offline_mode == 1:
                 if user_lang == 'zh-CN':
                     user_info = input_group('请输入Qubic-li池账户密码',[input("用户名",type=TEXT, name='username',hxt='例如邮箱', required=True),
@@ -209,8 +264,20 @@ def main():
                     for miner in miners:
                         hashrate += int(miner["currentIts"])
                     return hashrate
-                miner_info_temp = miner_info(user_name,user_password)
-                myHashrate = miner_hashrate(miner_info_temp)
+                try:
+                    miner_info_temp = miner_info(user_name,user_password)
+                    myHashrate = miner_hashrate(miner_info_temp)
+                except:
+                    if is_offline_mode == 1:
+                        if user_lang == 'zh-CN':
+                            pywebio.output.put_error("获取信息中遇到错误，请检查您的账号密码输入是否正确。")
+                        else:
+                            pywebio.output.put_error("Encountered error while fetching data, please check the username/password inputted.")
+                    else:
+                        if user_lang == 'zh-CN':
+                            pywebio.output.put_error("获取信息中遇到错误，请检查您的token输入是否正确。")
+                        else:
+                            pywebio.output.put_error("Encountered error while fetching data, please check the token inputted.")
 
             elif is_offline_mode == 2:
                 if user_lang == 'zh-CN':
@@ -244,10 +311,6 @@ def main():
 
             pywebio.output.put_loading(shape='border')
 
-            def currency_convert_cny(amount_usd):
-                convert_rate = CurrencyConverter().convert(1,'USD','CNY')
-                cny = amount_usd * convert_rate
-                return round(cny,2)
 
             def past_score_info(data):
                 if user_lang == 'zh-CN':
@@ -378,108 +441,218 @@ def main():
             try:
                 day_per_sol_period()
                 day_per_sol_warning()
-                if user_lang == 'zh-CN':
-                    pywebio.output.put_row([pywebio.output.put_text("⌛ 目前纪元信息⌛"),None,pywebio.output.put_text("🌐 网络信息🌐")])
-                    pywebio.output.put_row([pywebio.output.put_table([['信息类型','数值'],
-                                            ['目前纪元',str(epochNumber)],
-                                            ['目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin))],
-                                            ['目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd))],
-                                            ['纪元进度','{:.1f}%'.format(100 * curEpochProgress)]]),
-                                            None,
-                                            pywebio.output.put_table([['信息类型','数值'],
-                                            ['估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
-                                            ['sol/每小时',  '{:.1f}'.format(netSolsPerHour)],
-                                            ['平均分',  '{:.1f}'.format(netAvgScores)],
-                                            ['预测结束平均分','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=7)) )]])])
-                    
-                    pywebio.output.put_row([pywebio.output.put_text("📆 往期分数📆"),None,pywebio.output.put_text("💰 收益预计💰 (85%收益池)")])
-                    pywebio.output.put_row([pywebio.output.put_table(past_score_info(networkStat)),
-                                            None,
-                                            pywebio.output.put_table([['信息类型','数值'],
-                                            ['Qubic 价格', '{:.8f}$'.format((qubicPrice))],
-                                            ['预测的每 1 it/s 每日的收入', '{:.2f}￥'.format(currency_convert_cny(incomerPerOneITS))],
-                                            ['预测的每日收入', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS)))],
-                                            ['预测的每 Sol 的收入', '{:.2f}￥'.format(currency_convert_cny(curSolPrice))],
-                                            ['预测的每日 Sol 数量', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate)],
-                                            ['预测的每 Sol 的币量', '{0:,}'.format(sol_convert_qus(curSolPrice))],
-                                            ['预测的本纪元收入(85%)','{:.1f}￥'.format(currency_convert_cny(7 * (myHashrate * incomerPerOneITS)))],
-                                            ['预测的本纪元收入(Bonus)','{:.1f}￥'.format(currency_convert_cny(7 * (myHashrate * bonus_reward_revenue(1))))]])])
-
-                    
-                    if is_offline_mode == 1:
-                        pywebio.output.put_row([pywebio.output.put_text("🖥️ 矿机信息🖥️"),None,pywebio.output.put_text("🖥️ 矿机总结🖥️")])
-                        pywebio.output.put_row([pywebio.output.put_table(miner_detail(miner_info(user_name,user_password))),
-                                                None,
-                                                pywebio.output.put_table([['总算力','总 Sol ','总幸运值(越小越好)','截至目前收益'],
-                                                [str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
-                                                ,summary_luckiness()
-                                                ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["foundSolutions"])]])])
-
+                if user_device_is_pc == True:           #识别用户是否使用移动/桌面
+                    if user_lang == 'zh-CN':            #识别是否为中文用户
+                        pywebio.output.put_row([pywebio.output.put_text("⌛ 目前纪元信息⌛"),pywebio.output.put_text("🌐 网络信息🌐")])
+                        pywebio.output.put_row([pywebio.output.put_table([['信息类型','数值'],
+                                                ['目前纪元',str(epochNumber)],
+                                                ['目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin))],
+                                                ['目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd))],
+                                                ['纪元进度','{:.1f}%'.format(100 * curEpochProgress)]]),
+                                                #None,
+                                                pywebio.output.put_table([['信息类型','数值'],
+                                                ['估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                ['sol/每小时',  '{:.1f}'.format(netSolsPerHour)],
+                                                ['平均分',  '{:.1f}'.format(netAvgScores)],
+                                                ['预测结束平均分','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])])
+                        pywebio.output.put_text("")
+                        
+                        pywebio.output.put_row([pywebio.output.put_text("📆 往期分数📆"),pywebio.output.put_text("💰 收益预计💰 (85%收益池)")])
+                        pywebio.output.put_row([pywebio.output.put_table(past_score_info(networkStat)),
+                                                #None,
+                                                pywebio.output.put_table([['信息类型','数值'],
+                                                ['Qubic 价格', '{:.8f}$'.format((qubicPrice))],
+                                                ['预测的每 1 it/s 每日的收入', '{:.2f}￥'.format(currency_convert_cny(incomerPerOneITS))],
+                                                ['预测的每日收入', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS)))],
+                                                ['预测的每 Sol 的价值', '{:.2f}￥'.format(currency_convert_cny(curSolPrice))],
+                                                ['预测的每日 Sol 数量', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate)],
+                                                ['预测的每 Sol 的币量', '{0:,}'.format(sol_convert_qus(curSolPrice))],
+                                                ['预测的本纪元收入(85%)','{:.1f}￥'.format(currency_convert_cny(7 * (myHashrate * incomerPerOneITS)))],
+                                                ['预测的本纪元收入(Bonus)','{:.1f}￥'.format(currency_convert_cny(7 * (myHashrate * bonus_reward_revenue(1))))]])])
+                        pywebio.output.put_text("")
 
                         
-                    if is_offline_mode == 2:
-                        pywebio.output.put_row([pywebio.output.put_text("🖥️ 矿机信息🖥️")
-                                                ,None,
-                                                pywebio.output.put_text("🖥️ 矿机总结🖥️")])
-                        pywebio.output.put_row([pywebio.output.put_table(miner_detail_solution(solution_get_info()))
-                                                ,None,
-                                                pywebio.output.put_table([['总算力','总 Sol ','总幸运值(越小越好)','截至目前收益'],
-                                                [str(myHashrate) + " it/s",str(miner_info_temp["solutions"])
-                                                ,summary_luckiness_solution()
-                                                ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["solutions"])]])])
+                        if is_offline_mode == 1:
+                            pywebio.output.put_row([pywebio.output.put_text("🖥️ 矿机信息🖥️"),pywebio.output.put_text("🖥️ 矿机总结🖥️")])
+                            pywebio.output.put_row([pywebio.output.put_table(miner_detail(miner_info(user_name,user_password))),
+                                                    #None,
+                                                    pywebio.output.put_table([['总算力','总 Sol ','总幸运值(越小越好)','截至目前收益'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
+                                                    ,summary_luckiness()
+                                                    ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["foundSolutions"])]])])
+                            pywebio.output.put_text("")
+
+
+                            
+                        if is_offline_mode == 2:
+                            pywebio.output.put_row([pywebio.output.put_text("🖥️ 矿机信息🖥️"),
+                                                    pywebio.output.put_text("🖥️ 矿机总结🖥️")])
+                            pywebio.output.put_row([pywebio.output.put_table(miner_detail_solution(solution_get_info())),
+                                                    pywebio.output.put_table([['总算力','总 Sol ','总幸运值(越小越好)','截至目前收益'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["solutions"])
+                                                    ,summary_luckiness_solution()
+                                                    ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["solutions"])]])])
+                            pywebio.output.put_text("")
+                    else:
+                        pywebio.output.put_row([pywebio.output.put_text("⌛ Current epoch info⌛"),
+                                                pywebio.output.put_text("🌐 Network info🌐")])
+                        pywebio.output.put_row([pywebio.output.put_table([['Data category','Data'],
+                                                ['Current epoch number',str(epochNumber)],
+                                                ['Current epoch start time (UTC)',str(curEpochBegin)],
+                                                ['Current epoch end time (UTC)',str(curEpochEnd)],
+                                                ['Epoch progress','{:.1f}%'.format(100 * curEpochProgress)]]),
+                                                pywebio.output.put_table([['Data catefory','Data'],
+                                                ['Estimated hashrate', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                ['Sols per hour',  '{:.1f}'.format(netSolsPerHour)],
+                                                ['Average score',  '{:.1f}'.format(netAvgScores)],
+                                                ['Estimated Average score at epoch end','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])])
+                        pywebio.output.put_text("")
+                        
+                        pywebio.output.put_row([pywebio.output.put_text("📆 Past score info📆"),
+                                                pywebio.output.put_text("💰 Estimated revenue💰 (85% Reward pool)")])
+                        pywebio.output.put_row([pywebio.output.put_table(past_score_info(networkStat)),
+                                                pywebio.output.put_table([['Data catefory','Data'],
+                                                ['Qubic price', '{:.8f}$'.format((qubicPrice))],
+                                                ['Estimated per 1 it/s daliy revenue', '{:.2f}$'.format(incomerPerOneITS)],
+                                                ['Estimated daily revenue', '{:.2f}$'.format(myHashrate * incomerPerOneITS)],
+                                                ['Estimated revenue per Sol', '{:.2f}$'.format(curSolPrice)],
+                                                ['Estimated earned Sol(s) per day', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate)],
+                                                ['Estimated qus per Sol', '{0:,}'.format(sol_convert_qus(curSolPrice))],
+                                                ['Estimated epoch revenue(85%)','{:.1f}$'.format(7 * (myHashrate * incomerPerOneITS))],
+                                                ['Estimated epoch revenue(Bonus)','{:.1f}$'.format(7 * (myHashrate * bonus_reward_revenue(1)))]])])
+                        pywebio.output.put_text("")
+
+                        
+                        if is_offline_mode == 1:
+                            pywebio.output.put_row([pywebio.output.put_text("🖥️ Miner info🖥️"),
+                                                    pywebio.output.put_text("🖥️ Miner summary🖥️")])
+                            pywebio.output.put_row([pywebio.output.put_table(miner_detail(miner_info(user_name,user_password))),
+                                                    pywebio.output.put_table([['Total hashrate','Total Sol(s) ','Summarized effort%','Revenue till now'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
+                                                    ,summary_luckiness()
+                                                    ,'{:.2f}$'.format((curSolPrice) * miner_info_temp["foundSolutions"])]])])
+                            pywebio.output.put_text("")
+                            
+                        if is_offline_mode == 2:
+                            pywebio.output.put_row([pywebio.output.put_text("🖥️ Miner info🖥️"),
+                                                    pywebio.output.put_text("🖥️ Miner summary🖥️")])
+                            pywebio.output.put_row([pywebio.output.put_table(miner_detail_solution(solution_get_info())),
+                                                    pywebio.output.put_table([['Total hashrate','Total Sol(s) ','Summarized effort%','Revenue till now'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["solutions"])
+                                                    ,summary_luckiness_solution()
+                                                    ,'{:.2f}$'.format((curSolPrice) * miner_info_temp["solutions"])]])])
+                            pywebio.output.put_text("")
                 else:
-                    pywebio.output.put_row([pywebio.output.put_text("⌛ Current epoch info⌛")
-                                            ,None,
-                                            pywebio.output.put_text("🌐 Network info🌐")])
-                    pywebio.output.put_row([pywebio.output.put_table([['Data category','Data'],
-                                            ['Current epoch number',str(epochNumber)],
-                                            ['Current epoch start time (UTC)',str(curEpochBegin)],
-                                            ['Current epoch end time (UTC)',str(curEpochEnd)],
-                                            ['Epoch progress','{:.1f}%'.format(100 * curEpochProgress)]])
-                                            ,None,
-                                            pywebio.output.put_table([['Data catefory','Data'],
-                                            ['Estimated hashrate', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
-                                            ['Sols per hour',  '{:.1f}'.format(netSolsPerHour)],
-                                            ['Average score',  '{:.1f}'.format(netAvgScores)],
-                                            ['Estimated Average score epoch end','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=7)) )]])])
-                    
-                    pywebio.output.put_row([pywebio.output.put_text("📆 Past score info📆")
-                                            ,None,
-                                            pywebio.output.put_text("💰 Estimated revenue💰 (85% Reward pool)")])
-                    pywebio.output.put_row([pywebio.output.put_table(past_score_info(networkStat))
-                                            ,None,
-                                            pywebio.output.put_table([['Data catefory','Data'],
-                                            ['Qubic price', '{:.8f}$'.format((qubicPrice))],
-                                            ['Estimated per 1 it/s daliy revenue', '{:.2f}$'.format(incomerPerOneITS)],
-                                            ['Estimated daily revenue', '{:.2f}$'.format(myHashrate * incomerPerOneITS)],
-                                            ['Estimated revenue per Sol', '{:.2f}$'.format(curSolPrice)],
-                                            ['Estimated earned Sol(s) per day', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate)],
-                                            ['Estimated qus per Sol', '{0:,}'.format(sol_convert_qus(curSolPrice))],
-                                            ['Estimated epoch revenue(85%)','{:.1f}$'.format(7 * (myHashrate * incomerPerOneITS))],
-                                            ['Estimated epoch revenue(Bonus)','{:.1f}$'.format(7 * (myHashrate * bonus_reward_revenue(1)))]])])
+                    if user_lang == 'zh-CN':            #识别是否为中文用户
+                        pywebio.output.put_text("⌛ 目前纪元信息⌛")
+                        pywebio.output.put_table([['信息类型','数值'],
+                                                ['目前纪元',str(epochNumber)],
+                                                ['目前纪元开始的中国时间',convert_utc_to_china(str(curEpochBegin))],
+                                                ['目前纪元结束的中国时间',convert_utc_to_china(str(curEpochEnd))],
+                                                ['纪元进度','{:.1f}%'.format(100 * curEpochProgress)]])
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("🌐 网络信息🌐")
+                        pywebio.output.put_table([['信息类型','数值'],
+                                                ['估测的网络算力', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                ['sol/每小时',  '{:.1f}'.format(netSolsPerHour)],
+                                                ['平均分',  '{:.1f}'.format(netAvgScores)],
+                                                ['预测结束平均分','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("📆 往期分数📆")
+                        pywebio.output.put_table(past_score_info(networkStat))
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("💰 收益预计💰 (85%收益池)")
+                        pywebio.output.put_table([['信息类型','数值'],
+                                                ['Qubic 价格', '{:.8f}$'.format((qubicPrice))],
+                                                ['预测的每 1 it/s 每日的收入', '{:.2f}￥'.format(currency_convert_cny(incomerPerOneITS))],
+                                                ['预测的每日收入', '{:.2f}￥'.format(currency_convert_cny((myHashrate * incomerPerOneITS)))],
+                                                ['预测的每 Sol 的收入', '{:.2f}￥'.format(currency_convert_cny(curSolPrice))],
+                                                ['预测的每日 Sol 数量', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate)],
+                                                ['预测的每 Sol 的币量', '{0:,}'.format(sol_convert_qus(curSolPrice))],
+                                                ['预测的本纪元收入(85%)','{:.1f}￥'.format(currency_convert_cny(7 * (myHashrate * incomerPerOneITS)))],
+                                                ['预测的本纪元收入(Bonus)','{:.1f}￥'.format(currency_convert_cny(7 * (myHashrate * bonus_reward_revenue(1))))]])
+                        pywebio.output.put_text("                        ")
 
-                    
-                    if is_offline_mode == 1:
-                        pywebio.output.put_row([pywebio.output.put_text("🖥️ Miner info🖥️")
-                                                ,None,
-                                                pywebio.output.put_text("🖥️ Miner summary🖥️")])
-                        pywebio.output.put_row([pywebio.output.put_table(miner_detail(miner_info(user_name,user_password)))
-                                                ,None,
-                                                pywebio.output.put_table([['Total hashrate','Total Sol(s) ','Summarized effort%','Revenue till now'],
-                                                [str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
-                                                ,summary_luckiness()
-                                                ,'{:.2f}$'.format((curSolPrice) * miner_info_temp["foundSolutions"])]])])
                         
-                    if is_offline_mode == 2:
-                        pywebio.output.put_row([pywebio.output.put_text("🖥️ Miner info🖥️")
-                                                ,None,
-                                                pywebio.output.put_text("🖥️ Miner summary🖥️")])
-                        pywebio.output.put_row([pywebio.output.put_table(miner_detail_solution(solution_get_info()))
-                                                ,None,
-                                                pywebio.output.put_table([['Total hashrate','Total Sol(s) ','Summarized effort%','Revenue till now'],
-                                                [str(myHashrate) + " it/s",str(miner_info_temp["solutions"])
-                                                ,summary_luckiness_solution()
-                                                ,'{:.2f}$'.format((curSolPrice) * miner_info_temp["solutions"])]])])
+                        if is_offline_mode == 1:
+                            pywebio.output.put_text("🖥️ 矿机信息🖥️")
+                            pywebio.output.put_table(miner_detail(miner_info(user_name,user_password)))
+                            pywebio.output.put_text("                        ")
+                            pywebio.output.put_text("🖥️ 矿机总结🖥️")
+                            pywebio.output.put_table([['总算力','总 Sol ','总幸运值(越小越好)','截至目前收益'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
+                                                    ,summary_luckiness()
+                                                    ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["foundSolutions"])]])
+
+
+                            
+                        if is_offline_mode == 2:
+                            pywebio.output.put_text("🖥️ 矿机信息🖥️")
+                            pywebio.output.put_table(miner_detail_solution(solution_get_info()))
+                            pywebio.output.put_text("                        ")
+                            pywebio.output.put_text("🖥️ 矿机总结🖥️")
+                            pywebio.output.put_table([['总算力','总 Sol ','总幸运值(越小越好)','截至目前收益'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["solutions"])
+                                                    ,summary_luckiness_solution()
+                                                    ,'{:.2f}￥'.format(currency_convert_cny(curSolPrice) * miner_info_temp["solutions"])]])
+                    else:
+                        pywebio.output.put_text("⌛ Current epoch info⌛")
+                        pywebio.output.put_table([['Data category','Data'],
+                                                ['Current epoch number',str(epochNumber)],
+                                                ['Current epoch start time (UTC)',str(curEpochBegin)],
+                                                ['Current epoch end time (UTC)',str(curEpochEnd)],
+                                                ['Epoch progress','{:.1f}%'.format(100 * curEpochProgress)]])
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("🌐 Network info🌐")
+                        pywebio.output.put_table([['Data catefory','Data'],
+                                                ['Estimated hashrate', '{0:,} it/s'.format(netHashrate).replace(',', ' ')],
+                                                ['Sols per hour',  '{:.1f}'.format(netSolsPerHour)],
+                                                ['Average score',  '{:.1f}'.format(netAvgScores)],
+                                                ['Estimated Average score at epoch end','{:.1f}'.format(netSolsPerHour / ((datetime.utcnow() - curEpochBegin) / timedelta(days=1)) )]])
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("📆 Past score info📆")
+                        pywebio.output.put_table(past_score_info(networkStat))
+                        pywebio.output.put_text("                        ")
+                        pywebio.output.put_text("💰 Estimated revenue💰 (85% Reward pool)")
+                        pywebio.output.put_table([['Data catefory','Data'],
+                                                ['Qubic price', '{:.8f}$'.format((qubicPrice))],
+                                                ['Estimated per 1 it/s daliy revenue', '{:.2f}$'.format(incomerPerOneITS)],
+                                                ['Estimated daily revenue', '{:.2f}$'.format(myHashrate * incomerPerOneITS)],
+                                                ['Estimated revenue per Sol', '{:.2f}$'.format(curSolPrice)],
+                                                ['Estimated earned Sol(s) per day', '{:.3f}'.format(24 * myHashrate * netSolsPerHour / netHashrate)],
+                                                ['Estimated qus per Sol', '{0:,}'.format(sol_convert_qus(curSolPrice))],
+                                                ['Estimated epoch revenue(85%)','{:.1f}$'.format(7 * (myHashrate * incomerPerOneITS))],
+                                                ['Estimated epoch revenue(Bonus)','{:.1f}$'.format(7 * (myHashrate * bonus_reward_revenue(1)))]])
+
+                        
+                        if is_offline_mode == 1:
+                            pywebio.output.put_text("🖥️ Miner info🖥️")
+                            pywebio.output.put_table(miner_detail(miner_info(user_name,user_password)))
+                            pywebio.output.put_text("                        ")
+                            pywebio.output.put_text("🖥️ Miner summary🖥️")
+                            pywebio.output.put_table([['Total hashrate','Total Sol(s) ','Summarized effort%','Revenue till now'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["foundSolutions"])
+                                                    ,summary_luckiness()
+                                                    ,'{:.2f}$'.format((curSolPrice) * miner_info_temp["foundSolutions"])]])
+                            
+                        if is_offline_mode == 2:
+                            pywebio.output.put_text("🖥️ Miner info🖥️")
+                            pywebio.output.put_table(miner_detail_solution(solution_get_info()))
+                            pywebio.output.put_text("                        ")
+                            pywebio.output.put_text("🖥️ Miner summary🖥️")
+                            pywebio.output.put_table([['Total hashrate','Total Sol(s) ','Summarized effort%','Revenue till now'],
+                                                    [str(myHashrate) + " it/s",str(miner_info_temp["solutions"])
+                                                    ,summary_luckiness_solution()
+                                                    ,'{:.2f}$'.format((curSolPrice) * miner_info_temp["solutions"])]])
+
+
+
+                        
+
+                        
+
+
+
                         
 
                 pywebio.output.put_text("                       ")
@@ -495,7 +668,7 @@ def main():
                     else:
                         pywebio.output.put_error("Encountered error while fetching data, please check the token inputted.")
         except Exception as Exceptions:
-            pywebio.output.put_error("遇到致命错误，请联系作者\nEncountered an critical error while loading, please contact the developer.\n" + str(Exceptions))
+            pywebio.output.put_error("遇到致命错误，请联系作者\nEncountered an critical error while loading, please contact the developer.\n\n" + str(Exceptions))
     
 #main()
 
