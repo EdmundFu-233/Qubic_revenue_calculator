@@ -1,3 +1,5 @@
+[English](README_EN.md) | [中文](#)
+
 # Qubic Revenue Calculator / Qubic 收益计算器
 
 一个中文本地化、免费开源的 Qubic 挖矿收益估算工具。项目通过 Qubic 网络数据、矿池数据、QUBIC 市场价格和用户算力，估算每日收益、每个 SOL 的价值、预期 SOL 产出、当前纪元进度和矿机运行概况。
